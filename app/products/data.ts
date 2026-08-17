@@ -16,7 +16,7 @@ export const products = [
     category: "Electronics",
     description:
       "A modern smart watch for activity tracking, notifications, and everyday use.",
-    image: "/products/smart-watch.jpg",
+    image: "/products/smart-watch1.jpg",
     featured: true,
   },
   {
@@ -36,7 +36,7 @@ export const products = [
     category: "Home",
     description:
       "A compact coffee maker that makes preparing fresh coffee simple and convenient.",
-    image: "/products/coffee-maker.jpg",
+    image: "/products/coffee-maker1.jpg",
     featured: false,
   },
 ];
