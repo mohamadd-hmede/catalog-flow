@@ -157,7 +157,3 @@ The project has been verified to compile successfully.
 ## Purpose
 
 This project was created as Week 4 practical work to apply Next.js concepts including the App Router, dynamic routes, Server Components, and Server Actions in a functional content-driven application.
-
-## Github Repository Link
-
-https://github.com/mohamadd-hmede/catalog-flow.git
