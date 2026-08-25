@@ -1,23 +1,58 @@
 # CatalogFlow
 
-CatalogFlow is a content-driven product catalog built with Next.js using the App Router. It demonstrates dynamic routes, Server Components, Server Actions, form state handling, metadata, loading states, error handling, and responsive styling with Tailwind CSS.
+A full-stack product catalog built with **Next.js, Node.js, Express, PostgreSQL, and Prisma**.
 
-## Features
+CatalogFlow started as a content-driven Next.js application and was extended into a full-stack CRUD application during the internship. It combines a modern Next.js front-end with an Express REST API and PostgreSQL database, while also including BDD testing with Cucumber.js.
+
+## ✨ Features
 
 - Responsive product catalog
 - Featured products on the home page
 - Dynamic product detail pages
-- Product images and descriptions
+- Create, view, edit, and delete products
+- PostgreSQL-backed product data
+- REST API with full CRUD operations
 - Dynamic metadata for product pages
-- Custom product not-found page
-- Loading state for the products route
-- Error boundary with retry functionality
-- Contact form using a Server Action
-- Form feedback using `useActionState`
-- Pending submission state using `useFormStatus`
-- Shared header and footer through the root layout
+- Loading, error, and not-found states
+- Contact form using Next.js Server Actions
+- Shared responsive layout
+- BDD testing with Cucumber.js
 
-## Next.js Concepts Used
+## 🏗️ Architecture
+
+Product data flows through the application as follows:
+
+```text
+┌─────────────────────┐
+│   Next.js Frontend  │
+└──────────┬──────────┘
+           │ HTTP Requests
+           ▼
+┌─────────────────────┐
+│   Express REST API  │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│     PostgreSQL      │
+└─────────────────────┘
+```
+
+The Next.js front-end consumes the Express API, while PostgreSQL acts as the persistent data store.
+
+## 🚀 REST API
+
+The Express backend provides full CRUD operations for products:
+
+| Method   | Endpoint            | Description          |
+| -------- | ------------------- | -------------------- |
+| `GET`    | `/api/products`     | Get all products     |
+| `GET`    | `/api/products/:id` | Get a product by ID  |
+| `POST`   | `/api/products`     | Create a new product |
+| `PUT`    | `/api/products/:id` | Update a product     |
+| `DELETE` | `/api/products/:id` | Delete a product     |
+
+## ⚡ Next.js Implementation
 
 ### App Router
 
@@ -25,47 +60,41 @@ The project uses the Next.js App Router with file-based routing inside the `app`
 
 ### Dynamic Routes
 
-Product detail pages use:
+Dynamic routes are used for product details and editing:
 
 ```text
 /products/[productId]
+/products/[productId]/edit
 ```
-
-Examples:
-
-```text
-/products/1
-/products/2
-/products/3
-```
-
-The product ID is read from `params` and used to display the selected product.
 
 ### Server Components
 
-Pages are Server Components by default unless client-side React functionality is required.
+Pages are Server Components by default. Product data is fetched from the Express API and rendered by the Next.js application.
 
 ### Client Components
 
-Client Components are used only where needed. The contact form uses `useActionState`, and the submit button uses `useFormStatus`.
+Client Components are used where browser-side interaction is required, including:
+
+- Add Product form
+- Edit Product form
+- Delete Product button
+- Contact form state
 
 ### Server Actions
 
-The contact form submits to a Server Action defined in:
+The contact form uses a Server Action located in:
 
 ```text
 app/contact/actions.ts
 ```
 
-The action receives `FormData`, processes the submitted values, and returns a state message to the UI.
-
 ### Dynamic Metadata
 
-Product pages use `generateMetadata()` to generate a unique page title and description for each product.
+Product detail pages use `generateMetadata()` to provide product-specific page titles and descriptions.
 
-### Loading, Error, and Not Found
+### Loading, Error & Not Found
 
-The project uses:
+The application provides dedicated states using:
 
 ```text
 loading.tsx
@@ -73,9 +102,46 @@ error.tsx
 not-found.tsx
 ```
 
-`notFound()` is used when a requested product does not exist.
+## 🧪 BDD Testing
 
-## Screenshots
+Behavior-Driven Development specifications are written using **Given / When / Then** syntax and automated with **Cucumber.js**.
+
+```text
+features/
+├── catalog.feature
+└── step_definitions/
+    └── catalog.steps.js
+```
+
+Run the BDD test suite with:
+
+```bash
+npm run test:bdd
+```
+
+## 🗄️ Database
+
+Product data is stored in **PostgreSQL**.
+
+The database structure is modelled using Prisma:
+
+```text
+prisma/schema.prisma
+```
+
+Database migrations are stored in:
+
+```text
+prisma/migrations/
+```
+
+Initial CatalogFlow products can be inserted using the seed script:
+
+```bash
+npm run seed
+```
+
+## 📸 Screenshots
 
 ### Home Page
 
@@ -89,71 +155,215 @@ not-found.tsx
 
 ![Product Details](screenshots/product-details.png)
 
+### Add Product
+
+![Add Product](screenshots/add-product.png)
+
+### Edit Product
+
+![Edit Product](screenshots/edit-product.png)
+
 ### Contact Form
 
 ![Contact Page](screenshots/contact-page.png)
 
-## Project Structure
+## 📁 Project Structure
 
 ```text
-app/
-├── components/
-│   ├── Footer.tsx
-│   └── Header.tsx
-├── contact/
-│   ├── actions.ts
-│   ├── contact-form.tsx
-│   ├── page.tsx
-│   └── submit-button.tsx
-├── products/
-│   ├── [productId]/
-│   │   ├── not-found.tsx
+catalog-flow/
+├── app/
+│   ├── components/
+│   │   ├── Footer.tsx
+│   │   └── Header.tsx
+│   │
+│   ├── contact/
+│   │   ├── actions.ts
+│   │   ├── contact-form.tsx
+│   │   ├── page.tsx
+│   │   └── submit-button.tsx
+│   │
+│   ├── products/
+│   │   ├── [productId]/
+│   │   │   ├── edit/
+│   │   │   │   └── page.tsx
+│   │   │   ├── delete-button.tsx
+│   │   │   ├── not-found.tsx
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── new/
+│   │   │   └── page.tsx
+│   │   ├── error.tsx
+│   │   ├── loading.tsx
 │   │   └── page.tsx
-│   ├── data.ts
-│   ├── error.tsx
-│   ├── loading.tsx
+│   │
+│   ├── globals.css
+│   ├── layout.tsx
 │   └── page.tsx
-├── globals.css
-├── layout.tsx
-└── page.tsx
-
-public/
-└── products/
+│
+├── features/
+│   ├── step_definitions/
+│   │   └── catalog.steps.js
+│   └── catalog.feature
+│
+├── prisma/
+│   ├── migrations/
+│   ├── schema.prisma
+│   └── seed.ts
+│
+├── server/
+│   └── app.js
+│
+├── public/
+│   └── products/
+│
+├── screenshots/
+├── .env.example
+├── package.json
+└── README.md
 ```
 
-## Getting Started
+## ⚙️ Getting Started
 
-Install dependencies:
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-Run the development server:
+### 2. Configure PostgreSQL
+
+Create a PostgreSQL database named:
+
+```text
+catalog_flow
+```
+
+Create a `.env` file based on `.env.example`:
+
+```env
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/catalog_flow"
+```
+
+### 3. Apply the Database Migration
+
+```bash
+npx prisma migrate dev
+```
+
+### 4. Generate Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### 5. Seed Initial Products
+
+```bash
+npm run seed
+```
+
+## ▶️ Running the Application
+
+The backend and front-end run separately.
+
+Start the Express API:
+
+```bash
+npm run server
+```
+
+The API runs at:
+
+```text
+http://localhost:5000
+```
+
+Open another terminal and start the Next.js application:
 
 ```bash
 npm run dev
 ```
 
-Then open the local URL shown in the terminal.
+The front-end runs at:
 
-## Production Build
+```text
+http://localhost:3000
+```
 
-Create an optimized production build:
+## ✅ Testing
+
+Run the BDD test suite:
+
+```bash
+npm run test:bdd
+```
+
+Create a production build:
 
 ```bash
 npm run build
 ```
 
-The project has been verified to compile successfully.
+The application has been verified to compile successfully.
 
-## Technologies
+## 🛠️ Technologies
 
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
+| Area               | Technology                 |
+| ------------------ | -------------------------- |
+| Front-end          | Next.js, React, TypeScript |
+| Styling            | Tailwind CSS               |
+| Backend            | Node.js, Express.js        |
+| API                | REST                       |
+| Database           | PostgreSQL                 |
+| Database Modelling | Prisma                     |
+| Testing            | Cucumber.js, BDD           |
 
-## Purpose
+## 📚 Practical Work Covered
 
-This project was created as Week 4 practical work to apply Next.js concepts including the App Router, dynamic routes, Server Components, and Server Actions in a functional content-driven application.
+### Week 4 — Next.js Project
+
+Built the original content-driven CatalogFlow application using:
+
+- App Router
+- Dynamic routes
+- Server Components
+- Server Actions
+- Dynamic metadata
+- Loading, error, and not-found states
+- Responsive styling
+
+### Week 5 — BDD Exercise
+
+Created Given/When/Then feature specifications and automated them with Cucumber.js.
+
+**Deliverable:** Passing BDD test suite.
+
+### Week 5 — Prisma Exercise
+
+Modelled the product database with Prisma and applied the schema to PostgreSQL using migrations.
+
+**Deliverable:** Prisma schema and migration.
+
+### Week 5 — Full-Stack CRUD Project
+
+Extended CatalogFlow with a Node.js and Express REST API connected to PostgreSQL and consumed by the Next.js front-end.
+
+Express was used at this stage to apply the Node.js and Express concepts covered during Week 5.
+
+The application supports:
+
+- Creating products
+- Reading products
+- Updating products
+- Deleting products
+- Persistent PostgreSQL storage
+
+**Deliverable:** Full-stack CRUD application.
+
+## 🎯 Purpose
+
+CatalogFlow was developed as practical internship work across **Weeks 4 and 5**.
+
+The project demonstrates the progression from a content-driven Next.js application to a full-stack application with automated BDD testing, database modelling, PostgreSQL persistence, REST APIs, and complete CRUD functionality.
+
+CatalogFlow will continue to evolve in Week 6 with authentication and the integration of the project into a production-ready full-stack application.
