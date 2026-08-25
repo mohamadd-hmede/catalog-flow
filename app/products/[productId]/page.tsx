@@ -1,17 +1,42 @@
-import { products } from "../data";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import DeleteButton from "./delete-button";
 
 type Props = {
   params: Promise<{ productId: string }>;
 };
 
+type Product = {
+  id: number;
+  name: string;
+  price: string;
+  category: string;
+  description: string;
+  image: string;
+  featured: boolean;
+};
+
+async function getProduct(productId: string): Promise<Product | null> {
+  const response = await fetch(
+    `http://localhost:5000/api/products/${productId}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  return response.json();
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productId } = await params;
 
-  const product = products.find((product) => product.id === Number(productId));
+  const product = await getProduct(productId);
 
   if (!product) {
     return {
@@ -28,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductDetailsPage({ params }: Props) {
   const { productId } = await params;
 
-  const product = products.find((product) => product.id === Number(productId));
+  const product = await getProduct(productId);
 
   if (!product) {
     notFound();
@@ -45,12 +70,14 @@ export default async function ProductDetailsPage({ params }: Props) {
 
       <section className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm md:grid-cols-2">
         <div className="relative min-h-[320px] overflow-hidden rounded-2xl bg-slate-100">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-          />
+          {product.image && (
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          )}
         </div>
 
         <div>
@@ -74,6 +101,17 @@ export default async function ProductDetailsPage({ params }: Props) {
             <p className="mt-2 leading-7 text-slate-600">
               {product.description}
             </p>
+
+            <div className="mt-6 flex gap-3">
+              <Link
+                href={`/products/${product.id}/edit`}
+                className="inline-flex rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Edit Product
+              </Link>
+
+              <DeleteButton productId={product.id} />
+            </div>
           </div>
         </div>
       </section>

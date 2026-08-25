@@ -1,8 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
-import { products } from "./products/data";
 
-export default function Home() {
+type Product = {
+  id: number;
+  name: string;
+  price: string;
+  category: string;
+  description: string;
+  image: string;
+  featured: boolean;
+};
+
+export default async function Home() {
+  const response = await fetch("http://localhost:5000/api/products", {
+    cache: "no-store",
+  });
+
+  const products: Product[] = await response.json();
+
   const featuredProducts = products.filter((product) => product.featured);
 
   return (
@@ -56,12 +71,14 @@ export default function Home() {
               className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
             >
               <div className="relative h-52 bg-slate-100">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
+                {product.image && (
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                )}
               </div>
 
               <div className="p-6">
