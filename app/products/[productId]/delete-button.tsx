@@ -10,12 +10,9 @@ export default function DeleteButton({ productId }: Props) {
   const router = useRouter();
 
   async function handleDelete() {
-    const response = await fetch(
-      `http://localhost:5000/api/products/${productId}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await fetch(`/api/products/${productId}`, {
+      method: "DELETE",
+    });
 
     if (!response.ok) {
       alert("Failed to delete product.");

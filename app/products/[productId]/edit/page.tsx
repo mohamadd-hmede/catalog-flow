@@ -2,10 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function EditProductPage() {
   const params = useParams();
   const productId = params.productId;
+  const router = useRouter();
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -17,9 +19,7 @@ export default function EditProductPage() {
 
   useEffect(() => {
     async function getProduct() {
-      const response = await fetch(
-        `http://localhost:5000/api/products/${productId}`,
-      );
+      const response = await fetch(`/api/products/${productId}`);
 
       if (!response.ok) {
         setMessage("Failed to load product.");
@@ -42,30 +42,28 @@ export default function EditProductPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const response = await fetch(
-      `http://localhost:5000/api/products/${productId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          price: Number(price),
-          category,
-          description,
-          image,
-          featured,
-        }),
+    const response = await fetch(`/api/products/${productId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        name,
+        price: Number(price),
+        category,
+        description,
+        image,
+        featured,
+      }),
+    });
 
     if (!response.ok) {
       setMessage("Failed to update product.");
       return;
     }
 
-    setMessage("Product updated successfully.");
+    router.push(`/products/${productId}`);
+    router.refresh();
   }
 
   return (

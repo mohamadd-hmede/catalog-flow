@@ -20,7 +20,7 @@ type Product = {
 
 async function getProduct(productId: string): Promise<Product | null> {
   const response = await fetch(
-    `http://localhost:5000/api/products/${productId}`,
+    `${process.env.APP_URL}/api/products/${productId}`,
     {
       cache: "no-store",
     },
