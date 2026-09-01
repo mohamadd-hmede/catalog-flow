@@ -25,10 +25,12 @@ export default function EditForm({ product }: Props) {
   const [image, setImage] = useState<File | null>(null);
   const [featured, setFeatured] = useState(product.featured);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSubmitting(true);
 
     const formData = new FormData();
 
@@ -42,19 +44,26 @@ export default function EditForm({ product }: Props) {
       formData.append("image", image);
     }
 
-    const response = await fetch(`/api/products/${product.id}`, {
-      method: "PUT",
-      body: formData,
-    });
+    try {
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: "PUT",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const errorMessage = await response.text();
-      setMessage(errorMessage || "Failed to update product.");
-      return;
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        setMessage(errorMessage || "Failed to update product.");
+        return;
+      }
+
+      router.push(`/products/${product.id}`);
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to update product.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/products/${product.id}`);
-    router.refresh();
   }
 
   return (
@@ -71,12 +80,14 @@ export default function EditForm({ product }: Props) {
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Name
             </label>
+
             <input
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -84,13 +95,15 @@ export default function EditForm({ product }: Props) {
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Price
             </label>
+
             <input
               type="number"
               step="0.01"
               value={price}
               onChange={(event) => setPrice(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -98,12 +111,14 @@ export default function EditForm({ product }: Props) {
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Category
             </label>
+
             <input
               type="text"
               value={category}
               onChange={(event) => setCategory(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -111,12 +126,14 @@ export default function EditForm({ product }: Props) {
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Description
             </label>
+
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               required
               rows={4}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -133,7 +150,8 @@ export default function EditForm({ product }: Props) {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(event) => setImage(event.target.files?.[0] ?? null)}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -142,15 +160,17 @@ export default function EditForm({ product }: Props) {
               type="checkbox"
               checked={featured}
               onChange={(event) => setFeatured(event.target.checked)}
+              disabled={isSubmitting}
             />
             Featured product
           </label>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Update Product
+            {isSubmitting ? "Updating Product..." : "Update Product"}
           </button>
         </form>
 

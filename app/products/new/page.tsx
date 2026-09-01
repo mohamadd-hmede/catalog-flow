@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,8 @@ export default function NewProductPage() {
   const [image, setImage] = useState<File | null>(null);
   const [featured, setFeatured] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { status } = useSession();
   const router = useRouter();
 
@@ -41,28 +44,36 @@ export default function NewProductPage() {
     formData.append("image", image);
     formData.append("featured", String(featured));
 
+    setIsSubmitting(true);
     setMessage("Uploading product...");
 
-    const response = await fetch("/api/products", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const errorMessage = await response.text();
-      setMessage(errorMessage || "Failed to add product.");
-      return;
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        setMessage(errorMessage || "Failed to add product.");
+        return;
+      }
+
+      setMessage("Product added successfully.");
+
+      setName("");
+      setPrice("");
+      setCategory("");
+      setDescription("");
+      setImage(null);
+      setFeatured(false);
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to add product.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setMessage("Product added successfully.");
-
-    setName("");
-    setPrice("");
-    setCategory("");
-    setDescription("");
-    setImage(null);
-    setFeatured(false);
-    form.reset();
   }
 
   return (
@@ -89,7 +100,8 @@ export default function NewProductPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -104,7 +116,8 @@ export default function NewProductPage() {
               value={price}
               onChange={(event) => setPrice(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -118,7 +131,8 @@ export default function NewProductPage() {
               value={category}
               onChange={(event) => setCategory(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -132,7 +146,8 @@ export default function NewProductPage() {
               onChange={(event) => setDescription(event.target.value)}
               required
               rows={4}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
           </div>
 
@@ -146,7 +161,8 @@ export default function NewProductPage() {
               accept="image/jpeg,image/png,image/webp"
               onChange={(event) => setImage(event.target.files?.[0] ?? null)}
               required
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900"
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
 
             <p className="mt-2 text-sm text-slate-500">
@@ -159,15 +175,17 @@ export default function NewProductPage() {
               type="checkbox"
               checked={featured}
               onChange={(event) => setFeatured(event.target.checked)}
+              disabled={isSubmitting}
             />
             Featured product
           </label>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Add Product
+            {isSubmitting ? "Adding Product..." : "Add Product"}
           </button>
         </form>
 
