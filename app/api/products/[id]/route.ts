@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import { auth } from "@/auth";
 import { put, del } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
 
 export async function GET(
   request: Request,
@@ -139,6 +140,9 @@ export async function PUT(
       },
     });
 
+    revalidatePath("/products");
+    revalidatePath(`/products/${productId}`);
+
     if (oldImageToDelete) {
       await del(oldImageToDelete);
     }
@@ -197,6 +201,9 @@ export async function DELETE(
         id: Number(id),
       },
     });
+
+    revalidatePath("/products");
+    revalidatePath(`/products/${productId}`);
 
     if (product.image) {
       await del(product.image);

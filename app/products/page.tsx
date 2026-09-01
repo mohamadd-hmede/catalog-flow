@@ -1,22 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-
-type Product = {
-  id: number;
-  name: string;
-  price: string;
-  category: string;
-  description: string;
-  image: string;
-  featured: boolean;
-};
+import { prisma } from "@/lib/prisma";
 
 export default async function ProductsPage() {
-  const response = await fetch(`${process.env.APP_URL}/api/products`, {
-    cache: "no-store",
-  });
-
-  const products: Product[] = await response.json();
+  const products = await prisma.product.findMany();
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -73,7 +60,7 @@ export default async function ProductsPage() {
               </div>
 
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
-                ${product.price}
+                ${product.price.toString()}{" "}
               </span>
             </div>
 

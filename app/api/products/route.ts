@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { put } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   try {
@@ -96,6 +97,8 @@ export async function POST(request: Request) {
         userEmail: session.user.email,
       },
     });
+
+    revalidatePath("/products");
 
     return Response.json(product, {
       status: 201,
