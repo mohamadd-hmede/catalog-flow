@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import { auth } from "@/auth";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 
 export async function GET(
   request: Request,
@@ -99,6 +99,7 @@ export async function PUT(
     }
 
     let imageUrl = existingProduct.image;
+    let oldImageToDelete: string | null = null;
 
     if (image instanceof File && image.size > 0) {
       const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -123,6 +124,7 @@ export async function PUT(
       });
 
       imageUrl = blob.url;
+      oldImageToDelete = existingProduct.image;
     }
 
     const product = await prisma.product.update({
@@ -136,6 +138,10 @@ export async function PUT(
         featured,
       },
     });
+
+    if (oldImageToDelete) {
+      await del(oldImageToDelete);
+    }
 
     return Response.json(product);
   } catch (error) {
@@ -160,15 +166,20 @@ export async function DELETE(
 ) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.email) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   const { id } = await params;
+  const productId = Number(id);
+
+  if (!Number.isInteger(productId)) {
+    return new Response("Invalid product ID", { status: 400 });
+  }
 
   const existingProduct = await prisma.product.findUnique({
     where: {
-      id: Number(id),
+      id: productId,
     },
   });
 
@@ -186,6 +197,10 @@ export async function DELETE(
         id: Number(id),
       },
     });
+
+    if (product.image) {
+      await del(product.image);
+    }
 
     return Response.json(product);
   } catch (error) {
