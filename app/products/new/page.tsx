@@ -8,7 +8,7 @@ export default function NewProductPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [featured, setFeatured] = useState(false);
   const [message, setMessage] = useState("");
   const { status } = useSession();
@@ -26,23 +26,31 @@ export default function NewProductPage() {
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!image) {
+      setMessage("Please select a product image.");
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("price", price);
+    formData.append("category", category);
+    formData.append("description", description);
+    formData.append("image", image);
+    formData.append("featured", String(featured));
+
+    setMessage("Uploading product...");
+
     const response = await fetch("/api/products", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        price: Number(price),
-        category,
-        description,
-        image,
-        featured,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
-      setMessage("Failed to add product.");
+      const errorMessage = await response.text();
+      setMessage(errorMessage || "Failed to add product.");
       return;
     }
 
@@ -52,8 +60,9 @@ export default function NewProductPage() {
     setPrice("");
     setCategory("");
     setDescription("");
-    setImage("");
+    setImage(null);
     setFeatured(false);
+    form.reset();
   }
 
   return (
@@ -129,17 +138,20 @@ export default function NewProductPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Image Path
+              Product Image
             </label>
 
             <input
-              type="text"
-              value={image}
-              onChange={(event) => setImage(event.target.value)}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => setImage(event.target.files?.[0] ?? null)}
               required
-              placeholder="/products/example.jpg"
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500"
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900"
             />
+
+            <p className="mt-2 text-sm text-slate-500">
+              JPEG, PNG, or WebP. Maximum size: 4 MB.
+            </p>
           </div>
 
           <label className="flex items-center gap-3 text-sm font-medium text-slate-700">

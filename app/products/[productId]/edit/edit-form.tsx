@@ -22,30 +22,34 @@ export default function EditForm({ product }: Props) {
   const [price, setPrice] = useState(product.price);
   const [category, setCategory] = useState(product.category);
   const [description, setDescription] = useState(product.description);
-  const [image, setImage] = useState(product.image);
+  const [image, setImage] = useState<File | null>(null);
   const [featured, setFeatured] = useState(product.featured);
   const [message, setMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage("");
+
+    const formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("price", price);
+    formData.append("category", category);
+    formData.append("description", description);
+    formData.append("featured", String(featured));
+
+    if (image) {
+      formData.append("image", image);
+    }
 
     const response = await fetch(`/api/products/${product.id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        price: Number(price),
-        category,
-        description,
-        image,
-        featured,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
-      setMessage("Failed to update product.");
+      const errorMessage = await response.text();
+      setMessage(errorMessage || "Failed to update product.");
       return;
     }
 
@@ -118,13 +122,17 @@ export default function EditForm({ product }: Props) {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Image Path
+              Replace Image
             </label>
+
+            <p className="mb-3 text-sm text-slate-500">
+              Leave this empty to keep the current image.
+            </p>
+
             <input
-              type="text"
-              value={image}
-              onChange={(event) => setImage(event.target.value)}
-              required
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => setImage(event.target.files?.[0] ?? null)}
               className="w-full rounded-lg border border-slate-300 px-4 py-3"
             />
           </div>

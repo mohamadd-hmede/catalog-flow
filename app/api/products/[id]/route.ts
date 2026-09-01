@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import { auth } from "@/auth";
+import { put } from "@vercel/blob";
 
 export async function GET(
   request: Request,
@@ -47,13 +48,19 @@ export async function PUT(
 ) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.email) {
     return new Response("Unauthorized", { status: 401 });
   }
+
   const { id } = await params;
+  const productId = Number(id);
+
+  if (!Number.isInteger(productId)) {
+    return new Response("Invalid product ID", { status: 400 });
+  }
 
   const existingProduct = await prisma.product.findUnique({
-    where: { id: Number(id) },
+    where: { id: productId },
   });
 
   if (!existingProduct) {
@@ -65,19 +72,67 @@ export async function PUT(
   }
 
   try {
-    const { name, price, category, description, image, featured } =
-      await request.json();
+    const formData = await request.formData();
+
+    const name = formData.get("name");
+    const price = formData.get("price");
+    const category = formData.get("category");
+    const description = formData.get("description");
+    const image = formData.get("image");
+    const featured = formData.get("featured") === "true";
+
+    if (
+      typeof name !== "string" ||
+      typeof price !== "string" ||
+      typeof category !== "string" ||
+      typeof description !== "string"
+    ) {
+      return new Response("Invalid product data", { status: 400 });
+    }
+
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      return new Response("Price must be greater than zero", {
+        status: 400,
+      });
+    }
+
+    let imageUrl = existingProduct.image;
+
+    if (image instanceof File && image.size > 0) {
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+
+      if (!allowedImageTypes.includes(image.type)) {
+        return new Response("Only JPEG, PNG, and WebP images are allowed", {
+          status: 400,
+        });
+      }
+
+      if (image.size > 4 * 1024 * 1024) {
+        return new Response("Image must be smaller than 4 MB", {
+          status: 400,
+        });
+      }
+
+      const safeFileName = image.name.replace(/[^a-zA-Z0-9.-]/g, "-");
+
+      const blob = await put(`products/${safeFileName}`, image, {
+        access: "public",
+        addRandomSuffix: true,
+      });
+
+      imageUrl = blob.url;
+    }
 
     const product = await prisma.product.update({
-      where: {
-        id: Number(id),
-      },
+      where: { id: productId },
       data: {
         name,
-        price,
+        price: numericPrice,
         category,
         description,
-        image,
+        image: imageUrl,
         featured,
       },
     });
@@ -88,9 +143,7 @@ export async function PUT(
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
-      return new Response("Product not found", {
-        status: 404,
-      });
+      return new Response("Product not found", { status: 404 });
     }
 
     console.log(error);
