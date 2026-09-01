@@ -20,4 +20,5 @@ model Product {
   description String
   image       String
   featured    Boolean @default(false)
+  userEmail   String?
 }

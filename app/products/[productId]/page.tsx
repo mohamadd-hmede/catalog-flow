@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import DeleteButton from "./delete-button";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 type Props = {
   params: Promise<{ productId: string }>;
@@ -16,21 +18,32 @@ type Product = {
   description: string;
   image: string;
   featured: boolean;
+  isOwner: boolean;
 };
 
 async function getProduct(productId: string): Promise<Product | null> {
-  const response = await fetch(
-    `${process.env.APP_URL}/api/products/${productId}`,
-    {
-      cache: "no-store",
-    },
-  );
+  const session = await auth();
 
-  if (response.status === 404) {
+  const product = await prisma.product.findUnique({
+    where: {
+      id: Number(productId),
+    },
+  });
+
+  if (!product) {
     return null;
   }
 
-  return response.json();
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price.toString(),
+    category: product.category,
+    description: product.description,
+    image: product.image,
+    featured: product.featured,
+    isOwner: session?.user?.email === product.userEmail,
+  };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -103,14 +116,15 @@ export default async function ProductDetailsPage({ params }: Props) {
             </p>
 
             <div className="mt-6 flex gap-3">
-              <Link
-                href={`/products/${product.id}/edit`}
-                className="inline-flex rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                Edit Product
-              </Link>
-
-              <DeleteButton productId={product.id} />
+              {product.isOwner && (
+                <Link
+                  href={`/products/${product.id}/edit`}
+                  className="inline-flex rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Edit Product
+                </Link>
+              )}
+              <DeleteButton productId={product.id} isOwner={product.isOwner} />
             </div>
           </div>
         </div>

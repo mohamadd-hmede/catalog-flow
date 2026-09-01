@@ -1,8 +1,18 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        category: true,
+        description: true,
+        image: true,
+        featured: true,
+      },
       orderBy: {
         id: "asc",
       },
@@ -19,6 +29,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
     const { name, price, category, description, image, featured } =
       await request.json();
@@ -31,6 +47,7 @@ export async function POST(request: Request) {
         description,
         image,
         featured,
+        userEmail: session.user.email,
       },
     });
 

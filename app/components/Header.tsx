@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
+import AuthButtons from "@/app/components/auth-buttons";
 export default function Header() {
   const pathname = usePathname();
 
@@ -56,6 +56,7 @@ export default function Header() {
             Contact
           </Link>
         </div>
+        <AuthButtons />
       </nav>
     </header>
   );
