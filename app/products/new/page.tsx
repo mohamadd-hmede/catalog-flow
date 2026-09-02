@@ -61,13 +61,8 @@ export default function NewProductPage() {
 
       setMessage("Product added successfully.");
 
-      setName("");
-      setPrice("");
-      setCategory("");
-      setDescription("");
-      setImage(null);
-      setFeatured(false);
-      form.reset();
+      router.push("/products");
+      router.refresh();
     } catch (error) {
       console.error(error);
       setMessage("Failed to add product.");
