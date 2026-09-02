@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function GET() {
   try {
@@ -99,6 +100,19 @@ export async function POST(request: Request) {
     });
 
     revalidatePath("/products");
+
+    const distinctId = (
+      session.user as typeof session.user & { id: string }
+    ).id;
+    await captureServerEvent({
+      distinctId,
+      event: "product_created",
+      properties: {
+        product_id: product.id,
+        price: numericPrice,
+        featured,
+      },
+    });
 
     return Response.json(product, {
       status: 201,

@@ -3,6 +3,7 @@ import { Prisma } from "@/app/generated/prisma/client";
 import { auth } from "@/auth";
 import { put, del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function GET(
   request: Request,
@@ -147,6 +148,20 @@ export async function PUT(
       await del(oldImageToDelete);
     }
 
+    const distinctId = (
+      session.user as typeof session.user & { id: string }
+    ).id;
+    await captureServerEvent({
+      distinctId,
+      event: "product_updated",
+      properties: {
+        product_id: product.id,
+        price: numericPrice,
+        featured,
+        image_replaced: Boolean(oldImageToDelete),
+      },
+    });
+
     return Response.json(product);
   } catch (error) {
     if (
@@ -208,6 +223,18 @@ export async function DELETE(
     if (product.image) {
       await del(product.image);
     }
+
+    const distinctId = (
+      session.user as typeof session.user & { id: string }
+    ).id;
+    await captureServerEvent({
+      distinctId,
+      event: "product_deleted",
+      properties: {
+        product_id: product.id,
+        featured: product.featured,
+      },
+    });
 
     return Response.json(product);
   } catch (error) {

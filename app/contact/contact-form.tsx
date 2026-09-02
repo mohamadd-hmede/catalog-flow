@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import posthog from "posthog-js";
 import { submitContact } from "./actions";
 import SubmitButton from "./submit-button";
 
@@ -9,7 +10,20 @@ const initialState = {
 };
 
 export default function ContactForm() {
-  const [state, formAction] = useActionState(submitContact, initialState);
+  async function submitContactWithAnalytics(
+    previousState: typeof initialState,
+    formData: FormData,
+  ) {
+    const result = await submitContact(previousState, formData);
+    posthog.capture("contact_message_submitted");
+
+    return result;
+  }
+
+  const [state, formAction] = useActionState(
+    submitContactWithAnalytics,
+    initialState,
+  );
 
   return (
     <form
