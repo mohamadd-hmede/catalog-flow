@@ -1,106 +1,200 @@
 # CatalogFlow
 
-A full-stack product catalog built with **Next.js, Node.js, Express, PostgreSQL, and Prisma**.
+CatalogFlow is a production-ready full-stack product catalog and management application built with **Next.js, TypeScript, PostgreSQL, and Prisma**.
 
-CatalogFlow started as a content-driven Next.js application and was extended into a full-stack CRUD application during the internship. It combines a modern Next.js front-end with an Express REST API and PostgreSQL database, while also including BDD testing with Cucumber.js.
+The project was developed progressively during an internship, starting as a content-driven Next.js catalog and evolving into an authenticated full-stack application with CRUD operations, cloud image storage, analytics, automated BDD testing, and production deployment.
+
+## 🌐 Live Demo
+
+**Production:** https://catalog-flow-production.vercel.app
 
 ## ✨ Features
 
 - Responsive product catalog
 - Featured products on the home page
 - Dynamic product detail pages
-- Create, view, edit, and delete products
-- PostgreSQL-backed product data
-- REST API with full CRUD operations
+- Create, read, update, and delete products
+- Google authentication with Auth.js
+- Per-user product ownership and authorization
+- PostgreSQL persistence with Prisma
+- REST API using Next.js Route Handlers
+- Product image uploads with Vercel Blob
+- Automatic cleanup of replaced and deleted images
 - Dynamic metadata for product pages
 - Loading, error, and not-found states
-- Contact form using Next.js Server Actions
-- Shared responsive layout
+- Contact form using a Next.js Server Action
+- Cache revalidation after product mutations
+- Product analytics with PostHog
 - BDD testing with Cucumber.js
+- Production PostgreSQL database with Neon
+- Production deployment on Vercel
+
+## 🛠️ Tech Stack
+
+| Area                | Technology                       |
+| ------------------- | -------------------------------- |
+| Framework           | Next.js 16                       |
+| UI                  | React                            |
+| Language            | TypeScript                       |
+| Styling             | Tailwind CSS                     |
+| Backend             | Next.js Route Handlers           |
+| API                 | REST                             |
+| Authentication      | Auth.js / NextAuth, Google OAuth |
+| Database            | PostgreSQL                       |
+| ORM                 | Prisma                           |
+| Production Database | Neon PostgreSQL                  |
+| Image Storage       | Vercel Blob                      |
+| Analytics           | PostHog                          |
+| Testing             | Cucumber.js / BDD                |
+| Deployment          | Vercel                           |
 
 ## 🏗️ Architecture
 
-Product data flows through the application as follows:
+CatalogFlow is an integrated Next.js full-stack application.
 
 ```text
-┌─────────────────────┐
-│   Next.js Frontend  │
-└──────────┬──────────┘
-           │ HTTP Requests
-           ▼
-┌─────────────────────┐
-│   Express REST API  │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│     PostgreSQL      │
-└─────────────────────┘
+Browser
+   │
+   ▼
+Next.js Application
+   │
+   ├── Server Components ──────────┐
+   │                               │
+   └── Route Handlers              │
+              │                    │
+              └─────────┬──────────┘
+                        ▼
+                     Prisma
+                        │
+                        ▼
+                   PostgreSQL
+                  Local / Neon
+
+Auth.js       → Authentication
+Vercel Blob   → Product Images
+PostHog       → Analytics
+Vercel        → Deployment
 ```
 
-The Next.js front-end consumes the Express API, while PostgreSQL acts as the persistent data store.
+Server Components access Prisma directly where appropriate, while browser-driven CRUD operations use Next.js Route Handlers.
 
-## 🚀 REST API
+The Route Handlers manage request validation, authentication, authorization, database mutations, image operations, cache revalidation, and server-side analytics events.
 
-The Express backend provides full CRUD operations for products:
+## 🚀 API
 
-| Method   | Endpoint            | Description          |
-| -------- | ------------------- | -------------------- |
-| `GET`    | `/api/products`     | Get all products     |
-| `GET`    | `/api/products/:id` | Get a product by ID  |
-| `POST`   | `/api/products`     | Create a new product |
-| `PUT`    | `/api/products/:id` | Update a product     |
-| `DELETE` | `/api/products/:id` | Delete a product     |
+Product CRUD operations are implemented using **Next.js Route Handlers**.
 
-## ⚡ Next.js Implementation
+| Method   | Endpoint            | Description         | Access        |
+| -------- | ------------------- | ------------------- | ------------- |
+| `GET`    | `/api/products`     | Get all products    | Public        |
+| `GET`    | `/api/products/:id` | Get a product by ID | Public        |
+| `POST`   | `/api/products`     | Create a product    | Authenticated |
+| `PUT`    | `/api/products/:id` | Update a product    | Owner only    |
+| `DELETE` | `/api/products/:id` | Delete a product    | Owner only    |
 
-### App Router
+Authentication and product ownership checks are enforced server-side for protected operations.
 
-The project uses the Next.js App Router with file-based routing inside the `app` directory.
+## 🔐 Authentication & Authorization
 
-### Dynamic Routes
+CatalogFlow uses **Auth.js / NextAuth** with Google OAuth.
 
-Dynamic routes are used for product details and editing:
+Authenticated users can create products. Each created product is associated with its owner.
+
+Update and delete operations verify that the authenticated user owns the requested product before allowing the operation.
+
+Authorization is enforced inside the Route Handlers rather than relying only on the user interface.
+
+## 🗄️ Database
+
+CatalogFlow uses **PostgreSQL** with **Prisma ORM**.
+
+The database schema is defined in:
+
+```text
+prisma/schema.prisma
+```
+
+Database migrations are stored in:
+
+```text
+prisma/migrations/
+```
+
+The application uses separate database environments:
+
+```text
+Development → Local PostgreSQL
+Production  → Neon PostgreSQL
+```
+
+Neon provides the production PostgreSQL database, while Prisma is used for database modelling, migrations, and application data access.
+
+## 🖼️ Image Storage
+
+Product images are stored using **Vercel Blob** instead of the application's local filesystem.
+
+The application:
+
+- Accepts JPEG, PNG, and WebP images
+- Limits image uploads to 4 MB
+- Stores the generated Blob URL with the product
+- Keeps the existing image when no replacement is provided
+- Removes the previous Blob image when an image is replaced
+- Removes the associated Blob image when a product is deleted
+
+## ⚡ Next.js Features
+
+CatalogFlow uses several Next.js App Router features:
+
+- Server Components
+- Client Components
+- Dynamic routes
+- Route Handlers
+- Server Actions
+- Dynamic metadata
+- Cache revalidation
+- Loading UI
+- Error boundaries
+- Not-found handling
+
+Dynamic product routes include:
 
 ```text
 /products/[productId]
 /products/[productId]/edit
 ```
 
-### Server Components
-
-Pages are Server Components by default. Product data is fetched from the Express API and rendered by the Next.js application.
-
-### Client Components
-
-Client Components are used where browser-side interaction is required, including:
-
-- Add Product form
-- Edit Product form
-- Delete Product button
-- Contact form state
-
-### Server Actions
-
-The contact form uses a Server Action located in:
+The contact form demonstrates Next.js Server Actions through:
 
 ```text
 app/contact/actions.ts
 ```
 
-### Dynamic Metadata
+## 🔄 Data Fetching & Revalidation
 
-Product detail pages use `generateMetadata()` to provide product-specific page titles and descriptions.
+CatalogFlow uses server-side data access where appropriate.
 
-### Loading, Error & Not Found
+Server Components can query PostgreSQL directly through Prisma, while browser-driven product mutations use the REST API provided by Next.js Route Handlers.
 
-The application provides dedicated states using:
+After product mutations, affected routes are revalidated using Next.js cache revalidation.
+
+This keeps rendered product data synchronized with database changes without requiring a separate backend application.
+
+## 📊 Analytics
+
+CatalogFlow integrates **PostHog** for product and application analytics.
+
+Tracked product lifecycle events include:
 
 ```text
-loading.tsx
-error.tsx
-not-found.tsx
+product_created
+product_updated
+product_deleted
 ```
+
+Contact form activity and authenticated user identification are also integrated with PostHog.
+
+Analytics events are captured from client-side and server-side application code where appropriate.
 
 ## 🧪 BDD Testing
 
@@ -117,28 +211,6 @@ Run the BDD test suite with:
 
 ```bash
 npm run test:bdd
-```
-
-## 🗄️ Database
-
-Product data is stored in **PostgreSQL**.
-
-The database structure is modelled using Prisma:
-
-```text
-prisma/schema.prisma
-```
-
-Database migrations are stored in:
-
-```text
-prisma/migrations/
-```
-
-Initial CatalogFlow products can be inserted using the seed script:
-
-```bash
-npm run seed
 ```
 
 ## 📸 Screenshots
@@ -163,64 +235,9 @@ npm run seed
 
 ![Edit Product](screenshots/edit-product.png)
 
-### Contact Form
+### Contact Page
 
 ![Contact Page](screenshots/contact-page.png)
-
-## 📁 Project Structure
-
-```text
-catalog-flow/
-├── app/
-│   ├── components/
-│   │   ├── Footer.tsx
-│   │   └── Header.tsx
-│   │
-│   ├── contact/
-│   │   ├── actions.ts
-│   │   ├── contact-form.tsx
-│   │   ├── page.tsx
-│   │   └── submit-button.tsx
-│   │
-│   ├── products/
-│   │   ├── [productId]/
-│   │   │   ├── edit/
-│   │   │   │   └── page.tsx
-│   │   │   ├── delete-button.tsx
-│   │   │   ├── not-found.tsx
-│   │   │   └── page.tsx
-│   │   │
-│   │   ├── new/
-│   │   │   └── page.tsx
-│   │   ├── error.tsx
-│   │   ├── loading.tsx
-│   │   └── page.tsx
-│   │
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-│
-├── features/
-│   ├── step_definitions/
-│   │   └── catalog.steps.js
-│   └── catalog.feature
-│
-├── prisma/
-│   ├── migrations/
-│   ├── schema.prisma
-│   └── seed.ts
-│
-├── server/
-│   └── app.js
-│
-├── public/
-│   └── products/
-│
-├── screenshots/
-├── .env.example
-├── package.json
-└── README.md
-```
 
 ## ⚙️ Getting Started
 
@@ -230,21 +247,28 @@ catalog-flow/
 npm install
 ```
 
-### 2. Configure PostgreSQL
+### 2. Configure Environment Variables
 
-Create a PostgreSQL database named:
-
-```text
-catalog_flow
-```
-
-Create a `.env` file based on `.env.example`:
+Create local environment files using `.env.example` as a reference.
 
 ```env
 DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/catalog_flow"
+APP_URL=http://localhost:3000
+
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
+AUTH_SECRET=your_generated_auth_secret
+
+BLOB_STORE_ID=""
+BLOB_READ_WRITE_TOKEN=""
+
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=your_posthog_project_token
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
-### 3. Apply the Database Migration
+Never commit real credentials or secrets to the repository.
+
+### 3. Apply Database Migrations
 
 ```bash
 npx prisma migrate dev
@@ -256,46 +280,40 @@ npx prisma migrate dev
 npx prisma generate
 ```
 
-### 5. Seed Initial Products
+### 5. Seed Development Data
+
+Optional development seed data can be inserted with:
 
 ```bash
 npm run seed
 ```
 
-## ▶️ Running the Application
-
-The backend and front-end run separately.
-
-Start the Express API:
-
-```bash
-npm run server
-```
-
-The API runs at:
-
-```text
-http://localhost:5000
-```
-
-Open another terminal and start the Next.js application:
+### 6. Start the Application
 
 ```bash
 npm run dev
 ```
 
-The front-end runs at:
+The development application runs at:
 
 ```text
 http://localhost:3000
 ```
 
-## ✅ Testing
+CatalogFlow runs as a single integrated Next.js application. A separate Express server is not required in the final architecture.
+
+## ✅ Testing & Build
 
 Run the BDD test suite:
 
 ```bash
 npm run test:bdd
+```
+
+Run ESLint:
+
+```bash
+npm run lint
 ```
 
 Create a production build:
@@ -304,66 +322,115 @@ Create a production build:
 npm run build
 ```
 
-The application has been verified to compile successfully.
+The production build generates the Prisma Client before building Next.js:
 
-## 🛠️ Technologies
+```text
+prisma generate && next build
+```
 
-| Area               | Technology                 |
-| ------------------ | -------------------------- |
-| Front-end          | Next.js, React, TypeScript |
-| Styling            | Tailwind CSS               |
-| Backend            | Node.js, Express.js        |
-| API                | REST                       |
-| Database           | PostgreSQL                 |
-| Database Modelling | Prisma                     |
-| Testing            | Cucumber.js, BDD           |
+## ☁️ Deployment
 
-## 📚 Practical Work Covered
+CatalogFlow is deployed on **Vercel**.
 
-### Week 4 — Next.js Project
+The production environment uses:
 
-Built the original content-driven CatalogFlow application using:
+| Service      | Purpose                                    |
+| ------------ | ------------------------------------------ |
+| Vercel       | Next.js application hosting and deployment |
+| Neon         | PostgreSQL database                        |
+| Vercel Blob  | Product image storage                      |
+| Google OAuth | Authentication                             |
+| PostHog      | Analytics                                  |
 
-- App Router
-- Dynamic routes
+Production database migrations are applied with:
+
+```bash
+npx prisma migrate deploy
+```
+
+Production credentials and service configuration are managed through environment variables and are not committed to the repository.
+
+## 📚 Internship Development Progression
+
+CatalogFlow was developed incrementally across Weeks 4, 5, and 6 of the internship.
+
+### Week 4 — Next.js Catalog
+
+Built the initial content-driven CatalogFlow application using:
+
+- Next.js App Router
+- Dynamic product routes
 - Server Components
 - Server Actions
 - Dynamic metadata
 - Loading, error, and not-found states
 - Responsive styling
 
-### Week 5 — BDD Exercise
+**Deliverable:** Build-ready Next.js catalog.
 
-Created Given/When/Then feature specifications and automated them with Cucumber.js.
+### Week 5 — BDD, Database & CRUD Backend
 
-**Deliverable:** Passing BDD test suite.
+Extended CatalogFlow through BDD testing, database modelling, and backend development.
 
-### Week 5 — Prisma Exercise
+Week 5 included:
 
-Modelled the product database with Prisma and applied the schema to PostgreSQL using migrations.
+- Created Given/When/Then feature specifications
+- Automated BDD tests using Cucumber.js
+- Modelled the product database with Prisma
+- Applied database migrations to PostgreSQL
+- Built a Node.js and Express REST API
+- Implemented full product CRUD operations
+- Connected the Express API to Prisma and PostgreSQL
+- Consumed the backend from the Next.js frontend
 
-**Deliverable:** Prisma schema and migration.
+Express was used during this stage as a standalone backend to apply Node.js, REST API, and database concepts.
 
-### Week 5 — Full-Stack CRUD Project
+**Deliverables:** Passing BDD suite, Prisma schema and migrations, and full-stack CRUD application.
 
-Extended CatalogFlow with a Node.js and Express REST API connected to PostgreSQL and consumed by the Next.js front-end.
+### Week 6 — Production-Ready Full-Stack Integration
 
-Express was used at this stage to apply the Node.js and Express concepts covered during Week 5.
+Evolved CatalogFlow from the Week 5 architecture into a single production-ready full-stack Next.js application.
 
-The application supports:
+The Week 5 Express CRUD API was migrated to **Next.js Route Handlers**, removing the need for a separate backend server in the final architecture.
 
-- Creating products
-- Reading products
-- Updating products
-- Deleting products
-- Persistent PostgreSQL storage
+Week 6 included:
 
-**Deliverable:** Full-stack CRUD application.
+- Migrated product CRUD operations to Next.js Route Handlers
+- Added Google authentication with Auth.js / NextAuth
+- Protected product management operations
+- Added per-user product ownership and authorization
+- Added Vercel Blob image uploads
+- Added cleanup of replaced and deleted product images
+- Improved server-side data fetching
+- Added cache revalidation after product mutations
+- Improved loading, success, and error feedback for CRUD operations
+- Added PostHog analytics and product event tracking
+- Configured Neon PostgreSQL for production
+- Configured production environment variables
+- Improved responsive navigation and authentication controls
+- Prepared and deployed the application on Vercel
+- Verified authentication, CRUD operations, image storage, database persistence, analytics, and production behavior
 
-## 🎯 Purpose
+**Deliverable:** Shippable production-ready full-stack CatalogFlow application.
 
-CatalogFlow was developed as practical internship work across **Weeks 4 and 5**.
+## 🎯 Project Evolution
 
-The project demonstrates the progression from a content-driven Next.js application to a full-stack application with automated BDD testing, database modelling, PostgreSQL persistence, REST APIs, and complete CRUD functionality.
+```text
+Next.js Catalog
+      ↓
+BDD with Cucumber
+      ↓
+Prisma + PostgreSQL
+      ↓
+Express CRUD API
+      ↓
+Next.js Route Handlers
+      ↓
+Authentication + Ownership
+      ↓
+Cloud Image Storage + Analytics
+      ↓
+Production Deployment
+```
 
-CatalogFlow will continue to evolve in Week 6 with authentication and the integration of the project into a production-ready full-stack application.
+CatalogFlow demonstrates the progression from a content-driven Next.js project to a complete, authenticated, database-backed, production-deployed full-stack application.
